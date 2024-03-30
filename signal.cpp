@@ -40,20 +40,6 @@ public:
             shiftedValueList.push_back(valueList[i]);
             shiftedIndexList.push_back(newIndex);
         }
-
-        cout << "Shifted Index Array: ";
-        for (auto index : shiftedIndexList)
-        {
-            cout << index << " ";
-        }
-        cout << endl;
-
-        cout << "Shifted Value Array: ";
-        for (auto value : shiftedValueList)
-        {
-            cout << value << " ";
-        }
-        cout << endl;
     }
 
     void timeReversal()
@@ -65,58 +51,48 @@ public:
             reversalValueList.push_back(valueList[i]);
             reversalIndexList.push_back(-indexList[i]);
         }
-
-        cout << "Reversal Index Array: ";
-        for (auto index : reversalIndexList)
-        {
-            cout << index << " ";
-        }
-        cout << endl;
-
-        cout << "Reversal Value Array: ";
-        for (auto value : reversalValueList)
-        {
-            cout << value << " ";
-        }
-        cout << endl;
     }
 
     Signal add(Signal &other)
     {
+        Signal result(valueList, indexList, sampleRate);
+        // Khởi tạo kết quả bằng chính tín hiệu hiện tại
         // Kiểm tra kích thước của hai dãy
-        if (valueList.size() != other.valueList.size() || indexList.size() != other.indexList.size())
-        {
-            cout << "Error: Dãy không cùng kích thước." << endl;
-        }
-        else
-        {
-            vector<float> sumValueList;
-            for (int i = 0; i < valueList.size(); i++)
-            {
-                sumValueList.push_back(valueList[i] + other.valueList[i]);
-            }
+        // if (valueList.size() != other.valueList.size() || indexList.size() != other.indexList.size())
+        // {
+        //     // cout << "Error: Dãy không cùng kích thước." << endl;
+        // }
 
-            return Signal(sumValueList, indexList, sampleRate);
+        vector<float> sumValueList;
+        for (int i = 0; i < valueList.size(); i++)
+        {
+            sumValueList.push_back(valueList[i] + other.valueList[i]);
         }
+
+        result = Signal(sumValueList, indexList, sampleRate);
+
+        return result;
     }
 
     Signal multiply(Signal &other)
     {
+        Signal result(valueList, indexList, sampleRate);
+        // Khởi tạo kết quả bằng chính tín hiệu hiện tại
         // Kiểm tra kích thước của hai dãy
-        if (valueList.size() != other.valueList.size() || indexList.size() != other.indexList.size())
-        {
-            cout << "Error: Dãy không cùng kích thước." << endl;
-        }
-        else
-        {
-            vector<float> productValueList;
-            for (int i = 0; i < valueList.size(); i++)
-            {
-                productValueList.push_back(valueList[i] * other.valueList[i]);
-            }
+        // if (valueList.size() != other.valueList.size() || indexList.size() != other.indexList.size())
+        // {
+        //     cout << "Error: Dãy không cùng kích thước." << endl;
+        // }
 
-            return Signal(productValueList, indexList, sampleRate);
+        vector<float> productValueList;
+        for (int i = 0; i < valueList.size(); i++)
+        {
+            productValueList.push_back(valueList[i] * other.valueList[i]);
         }
+
+        result = Signal(productValueList, indexList, sampleRate);
+
+        return result;
     }
 
     Signal multiplyByScalar(float scalar)
@@ -436,20 +412,15 @@ public:
         return Signal(flangedValues, indexList, sampleRate);
     }
 };
-int main()
-{
-    char inputPath[255];
-    cout << "Enter the input file name: ";
-    cin >> inputPath;
 
-    char *inputFile = inputPath;
+Signal readAudioFile(const char *inputFile)
+{
     SF_INFO sfInfo;
     SNDFILE *sndfile = sf_open(inputFile, SFM_READ, &sfInfo);
 
     if (!sndfile)
     {
         cerr << "Error opening input file: " << inputFile << endl;
-        return 1;
     }
 
     // Đọc dữ liệu từ file WAV và lưu vào vector
@@ -462,82 +433,229 @@ int main()
         audioValueList.push_back(value);
         audioIndexList.push_back(i);
     }
-    Signal inputSignal = Signal(audioValueList, audioIndexList, sampleRate);
+    return Signal(audioValueList, audioIndexList, sampleRate);
+}
+
+int main()
+{
+    char inputPath[255];
+    cout << "Enter the input file name: ";
+    cin >> inputPath;
+
+    char *inputFile = inputPath;
+    Signal inputSignal = readAudioFile(inputFile);
 
     // Function Selections
-    // while (true)
-    // {
-    //     cout << "-----------------------------------";
-    //     cout << "1. Display Infomation" << endl;
-    //     cout << "2. Time Shifting" << endl;
-    //     cout << "3. Time Reversal" << endl;
-    //     cout << "4. Add" << endl;
-    //     cout << "5. Multiply" << endl;
-    //     cout << "6. Multiply By Scalar" << endl;
-    //     cout << "7. Downsample" << endl;
-    //     cout << "8. Upsample" << endl;
-    //     cout << "9. Low Pass Filter" << endl;
-    //     cout << "10. Band Pass Filter" << endl;
-    //     cout << "11. High Pass Filter" << endl;
-    //     cout << "12. High Stop Filter" << endl;
-    //     cout << "-----------------------------------";
-    //     int t;
-    //     cin >> t;
-    //     switch (t)
-    //     {
-    //     case 1:
-    //         inputSignal.displayInfo();
-    //         break;
+    int running = true;
+    while (running)
+    {
+        cout << "-----------------------------------" << endl;
+        cout << "1. Display Infomation" << endl;
+        cout << "2. Time Shifting" << endl;
+        cout << "3. Time Reversal" << endl;
+        cout << "4. Add" << endl;
+        cout << "5. Multiply" << endl;
+        cout << "6. Multiply By Scalar" << endl;
+        cout << "7. Downsample" << endl;
+        cout << "8. Upsample" << endl;
+        cout << "9. Low Pass Filter" << endl;
+        cout << "10. Band Pass Filter" << endl;
+        cout << "11. High Pass Filter" << endl;
+        cout << "12. Band Stop Filter" << endl;
+        cout << "13. Quit" << endl;
+        cout << "-----------------------------------" << endl;
+        int t;
+        cout << "Enter option: ";
+        cin >> t;
 
-    //     case 2:
-    //         cout << "Enter Shift Amount: ";
-    //         int shiftAmount;
-    //         cin >> shiftAmount;
-    //         inputSignal = inputSignal.timeShift(shiftAmount);
-    //         break;
+        switch (t)
+        {
+        case 1: // Display Infomation
+            inputSignal.displayInfo();
+            break;
 
-    //     case 3:
-    //         inputSignal = inputSignal.timeReversal();
-    //         break;
+        case 2: // Time Shifting
+            cout << "Enter Shift Amount (int): ";
+            int shiftAmount;
+            cin >> shiftAmount;
+            inputSignal.timeShift(shiftAmount);
+            cout << "Time Shifting successfully." << endl;
+            break;
 
-    //     case 4:
-    //     cout << ""
-    //         int n;
-    //         cin >> n;
+        case 3: // Time Reversal
+            inputSignal.timeReversal();
+            cout << "Time Reversal successfully." << endl;
+            break;
 
-    //         vector<int> anotherIndexList;
-    //         vector<float> anotherValueList;
-    //         for (int i = 0; i < n; i++)
-    //         {
-    //             anotherIndexList.push_back(i);
-    //             float x;
-    //             cin >> x;
-    //             anotherValueList.push_back(x);
-    //         }
-    //         float anotherSampleRate;
+        case 4: // Add
+        {
+            // Nhập tên của file âm thanh cần đọc
+            char anotherinputPath[255];
+            cout << "Enter the path of the audio file to be added: ";
+            cin >> anotherinputPath;
 
-    //         break;
+            // Đọc file âm thanh
+            Signal anotherSignal = readAudioFile(anotherinputPath);
 
-    //     case 5:
-    //         break;
+            // Kiểm tra xem file âm thanh có đọc thành công không
+            if (anotherSignal.valueList.empty())
+            {
+                cout << "Error reading audio file." << endl;
+                break;
+            }
 
-    //     case 6:
-    //         break;
+            // Kiểm tra xem hai file âm thanh có cùng sample rate không
+            if (inputSignal.sampleRate != anotherSignal.sampleRate)
+            {
+                cout << "Error: Sample rates of the two audio files are different." << endl;
+                break;
+            }
 
-    //     default:
-    //         break;
-    //     }
-    // }
+            // Thực hiện phép cộng
+            inputSignal = inputSignal.add(anotherSignal);
 
-    // Low Pass Filter
-    float cutoffFreq = 500.0; // Tần số cắt
-    int filterLength = 10;    // Độ dài của bộ lọc
-    Signal outputSignal = inputSignal.lowPassFilter(filterLength, cutoffFreq);
+            cout << "Audio file added successfully." << endl;
+            break;
+        }
 
-    // Fade
-    // float duraton = 1;
+        case 5: // Multiply
+        {
+            // Nhập tên của file âm thanh cần đọc
+            char anotherinputPath[255];
+            cout << "Enter the path of the audio file to be multiplied: ";
+            cin >> anotherinputPath;
 
-    // Signal outputSignal = inputSignal.addFadeIn(duraton);
+            // Đọc file âm thanh
+            Signal anotherSignal = readAudioFile(anotherinputPath);
+
+            // Kiểm tra xem file âm thanh có đọc thành công không
+            if (anotherSignal.valueList.empty())
+            {
+                cout << "Error reading audio file." << endl;
+                break;
+            }
+
+            // Kiểm tra xem hai file âm thanh có cùng sample rate không
+            if (inputSignal.sampleRate != anotherSignal.sampleRate)
+            {
+                cout << "Error: Sample rates of the two audio files are different." << endl;
+                break;
+            }
+
+            // Thực hiện phép nhân
+            inputSignal = inputSignal.multiply(anotherSignal);
+
+            cout << "Audio files multiplied successfully." << endl;
+            break;
+        }
+
+        case 6: // Multiply by Scalar
+            // Nhập scalar
+            float scalar;
+            cout << "Enter the scalar value (float): ";
+            cin >> scalar;
+
+            // Nhân tín hiệu với scalar
+            inputSignal = inputSignal.multiplyByScalar(scalar);
+
+            cout << "Signal multiplied by scalar successfully." << endl;
+            break;
+
+        case 7: // Downsample
+            //  Nhập hệ số downsample
+            int downsampleFactor;
+            cout << "Enter the downsample factor (int): ";
+            cin >> downsampleFactor;
+
+            // Thực hiện downsample và cập nhật tín hiệu đầu vào
+            inputSignal = inputSignal.downsample(downsampleFactor);
+
+            cout << "Downsampling completed successfully." << endl;
+            break;
+
+        case 8: // Upsample
+                // Nhập hệ số upsample
+            int upsampleFactor;
+            cout << "Enter the upsample factor (int): ";
+            cin >> upsampleFactor;
+
+            // Thực hiện upsample và cập nhật tín hiệu đầu vào
+            inputSignal = inputSignal.upsample(upsampleFactor);
+
+            cout << "Upsampling completed successfully." << endl;
+            break;
+
+        case 9: // Low Pass Filter
+            // Nhập thông số cho bộ lọc thông thấp
+            int filterLengthLP;
+            float cutoffFreqLP;
+            cout << "Enter the filter length (int): ";
+            cin >> filterLengthLP;
+            cout << "Enter the cutoff frequency (float): ";
+            cin >> cutoffFreqLP;
+
+            // Áp dụng bộ lọc thông thấp và cập nhật tín hiệu đầu vào
+            inputSignal = inputSignal.lowPassFilter(filterLengthLP, cutoffFreqLP);
+
+            cout << "Low pass filtering completed successfully." << endl;
+            break;
+
+        case 10: // Band Pass Filter
+        {
+            int filterLengthBP;
+            float lowCutoffFreqBP, highCutoffFreqBP;
+            cout << "Enter the filter length (int): ";
+            cin >> filterLengthBP;
+            cout << "Enter the low cutoff frequency (float): ";
+            cin >> lowCutoffFreqBP;
+            cout << "Enter the high cutoff frequency (float): ";
+            cin >> highCutoffFreqBP;
+
+            // Áp dụng bộ lọc thông dải và cập nhật tín hiệu đầu vào
+            inputSignal = inputSignal.bandPassFilter(filterLengthBP, lowCutoffFreqBP, highCutoffFreqBP);
+
+            cout << "Band pass filtering completed successfully." << endl;
+            break;
+        }
+
+        case 11: // High Pass Filter
+        {
+            int filterLengthHP;
+            cout << "Enter the filter length (int): ";
+            cin >> filterLengthHP;
+            float highCutoffFreqHP;
+            cout << "Enter High Cutoff Frequency(float): ";
+            cin >> highCutoffFreqHP;
+            // Áp dụng High Pass Filter vào inputSignal
+            inputSignal = inputSignal.highPassFilter(filterLengthHP, highCutoffFreqHP);
+            break;
+        }
+
+        case 12: // Band Stop Filter
+        {
+            int filterLengthBS;
+            cout << "Enter the filter length (int): ";
+            cin >> filterLengthBS;
+            float lowCutoffFreqBS, highCutoffFreqBS;
+            cout << "Enter Low Cutoff Frequency (float): ";
+            cin >> lowCutoffFreqBS;
+            cout << "Enter High Cutoff Frequency (float): ";
+            cin >> highCutoffFreqBS;
+            // Áp dụng Band Stop Filter vào inputSignal
+            inputSignal = inputSignal.bandStopFilter(filterLengthBS, lowCutoffFreqBS, highCutoffFreqBS);
+            break;
+        }
+
+        case 13:
+            running = false;
+            break;
+        default:
+            cout << "Invalid choice! Please try again." << endl;
+            break;
+        }
+    }
+
+    Signal outputSignal = inputSignal;
 
     //  Lưu dữ liệu vào file data.txt
     vector<int> outputIndexList = outputSignal.indexList;

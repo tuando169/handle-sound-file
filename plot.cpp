@@ -13,9 +13,9 @@ struct DataPoint
 
 int main()
 {
-    char inputPath[255];
-    cout << "Enter the input file name: ";
-    cin >> inputPath;
+    char inputPath[] = "data.txt";
+    // cout << "Enter the input file name: ";
+    // cin >> inputPath;
     ifstream dataFile(inputPath);
     if (!dataFile.is_open())
     {
@@ -52,13 +52,11 @@ int main()
     }
 
     // Gửi lệnh đến Gnuplot để vẽ đồ
-
+    fprintf(gnuplotPipe, "set term qt persist\n");
     fprintf(gnuplotPipe, "set title \"SndProg\" \n");
-
     string execute = "plot \"" + string(inputPath) + "\" skip 1 with lines\n";
     fprintf(gnuplotPipe, execute.c_str());
     fflush(gnuplotPipe);
-
     // Đóng pipes
     pclose(gnuplotPipe);
 
