@@ -7,7 +7,7 @@ using namespace std;
 
 struct DataPoint
 {
-    int index;
+    float index;
     float value;
 };
 
@@ -36,7 +36,7 @@ int main()
     while (getline(dataFile, line))
     {
         pos = line.find(":");
-        int index = stoi(line.substr(pos + 2, line.find(",") - pos - 2));
+        float index = stof(line.substr(pos + 2, line.find(",") - pos - 2));
         float value = stof(line.substr(line.find(":") + 2));
         dataPoints.push_back({index, value});
     }
@@ -54,7 +54,7 @@ int main()
     // Gửi lệnh đến Gnuplot để vẽ đồ
     fprintf(gnuplotPipe, "set term qt persist\n");
     fprintf(gnuplotPipe, "set title \"SndProg\" \n");
-    string execute = "plot \"" + string(inputPath) + "\" skip 1 with lines\n";
+    string execute = "plot \"" + string(inputPath) + "\"  skip 1 with lines\n";
     fprintf(gnuplotPipe, execute.c_str());
     fflush(gnuplotPipe);
     // Đóng pipes

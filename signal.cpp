@@ -3,6 +3,7 @@
 #include <sndfile.h>
 #include <fstream>
 #include <cmath>
+#include <iomanip>
 
 using namespace std;
 
@@ -10,11 +11,11 @@ class Signal
 {
 public:
     vector<float> valueList; // Dãy giá trị âm thanh
-    vector<int> indexList;   // Dãy chỉ số
+    vector<float> indexList; // Dãy chỉ số
     float sampleRate;        // Tần số lấy mẫu
 
     Signal(vector<float> &inputValueList,
-           vector<int> &inputIndexList,
+           vector<float> &inputIndexList,
            float inputSampleRate)
         : valueList(inputValueList), indexList(inputIndexList), sampleRate(inputSampleRate) {}
 
@@ -33,7 +34,7 @@ public:
     void timeShift(int shiftAmount)
     {
         vector<float> shiftedValueList;
-        vector<int> shiftedIndexList;
+        vector<float> shiftedIndexList;
         for (int i = 0; i < valueList.size(); i++)
         {
             int newIndex = indexList[i] - shiftAmount;
@@ -45,7 +46,7 @@ public:
     void timeReversal()
     {
         vector<float> reversalValueList;
-        vector<int> reversalIndexList;
+        vector<float> reversalIndexList;
         for (int i = valueList.size() - 1; i >= 0; i--)
         {
             reversalValueList.push_back(valueList[i]);
@@ -109,7 +110,7 @@ public:
     Signal downsample(int m)
     {
         vector<float> downsampledValueList;
-        vector<int> downsampledIndexList;
+        vector<float> downsampledIndexList;
 
         for (int i = 0; i < valueList.size(); i += m)
         {
@@ -123,7 +124,7 @@ public:
     Signal upsample(int l)
     {
         vector<float> upsampledValueList;
-        vector<int> upsampledIndexList;
+        vector<float> upsampledIndexList;
 
         for (int i = 0; i < valueList.size(); i++)
         {
@@ -412,11 +413,19 @@ public:
         return Signal(flangedValues, indexList, sampleRate);
     }
 };
-
 Signal readAudioFile(const char *inputFile)
 {
     SF_INFO sfInfo;
     SNDFILE *sndfile = sf_open(inputFile, SFM_READ, &sfInfo);
+    float sampleRate = sfInfo.samplerate;
+    size_t numFrames = sfInfo.frames;
+    float duration = static_cast<float>(numFrames) / sampleRate;
+
+    // Tính toán khoảng cách giữa các mẫu
+    float spaceFrames = duration / numFrames;
+
+    vector<float> audioValueList;
+    vector<float> audioIndexList;
 
     if (!sndfile)
     {
@@ -424,16 +433,43 @@ Signal readAudioFile(const char *inputFile)
     }
 
     // Đọc dữ liệu từ file WAV và lưu vào vector
-    vector<float> audioValueList;
-    vector<int> audioIndexList;
-    float sampleRate = sfInfo.samplerate;
     float value;
     for (int i = 0; sf_read_float(sndfile, &value, 1) > 0; ++i)
     {
         audioValueList.push_back(value);
-        audioIndexList.push_back(i);
+        // Cập nhật giá trị index
+        audioIndexList.push_back((i + 1) * spaceFrames);
     }
+
     return Signal(audioValueList, audioIndexList, sampleRate);
+}
+
+void writeDataToFile(const Signal &signal)
+{
+    // Lấy thông tin cần ghi vào file từ đối tượng Signal
+    vector<float> outputIndexList = signal.indexList;
+    vector<float> outputValueList = signal.valueList;
+    float outputSampleRate = signal.sampleRate;
+
+    // Mở tệp để ghi dữ liệu mới
+    ofstream outputFile("data.txt");
+    if (outputFile.is_open())
+    {
+        // Ghi thông tin mẫu và các cặp chỉ số - giá trị vào tệp
+        outputFile << outputSampleRate << endl;
+        for (int i = 0; i < outputValueList.size(); ++i)
+        {
+            outputFile << outputIndexList[i];
+            outputFile << " " << outputValueList[i] << endl;
+        }
+        // Đóng tệp sau khi ghi xong
+        outputFile.close();
+        cout << "Data has been saved." << endl;
+    }
+    else
+    {
+        cout << "Error opening the file." << endl;
+    }
 }
 
 int main()
@@ -450,7 +486,7 @@ int main()
     while (running)
     {
         cout << "-----------------------------------" << endl;
-        cout << "1. Display Infomation" << endl;
+        cout << "1. Save Infomation" << endl;
         cout << "2. Time Shifting" << endl;
         cout << "3. Time Reversal" << endl;
         cout << "4. Add" << endl;
@@ -470,8 +506,8 @@ int main()
 
         switch (t)
         {
-        case 1: // Display Infomation
-            inputSignal.displayInfo();
+        case 1: // Save Infomation
+            writeDataToFile(inputSignal);
             break;
 
         case 2: // Time Shifting
@@ -479,11 +515,13 @@ int main()
             int shiftAmount;
             cin >> shiftAmount;
             inputSignal.timeShift(shiftAmount);
+            writeDataToFile(inputSignal);
             cout << "Time Shifting successfully." << endl;
             break;
 
         case 3: // Time Reversal
             inputSignal.timeReversal();
+            writeDataToFile(inputSignal);
             cout << "Time Reversal successfully." << endl;
             break;
 
@@ -513,7 +551,7 @@ int main()
 
             // Thực hiện phép cộng
             inputSignal = inputSignal.add(anotherSignal);
-
+            writeDataToFile(inputSignal);
             cout << "Audio file added successfully." << endl;
             break;
         }
@@ -544,7 +582,7 @@ int main()
 
             // Thực hiện phép nhân
             inputSignal = inputSignal.multiply(anotherSignal);
-
+            writeDataToFile(inputSignal);
             cout << "Audio files multiplied successfully." << endl;
             break;
         }
@@ -557,7 +595,7 @@ int main()
 
             // Nhân tín hiệu với scalar
             inputSignal = inputSignal.multiplyByScalar(scalar);
-
+            writeDataToFile(inputSignal);
             cout << "Signal multiplied by scalar successfully." << endl;
             break;
 
@@ -569,7 +607,7 @@ int main()
 
             // Thực hiện downsample và cập nhật tín hiệu đầu vào
             inputSignal = inputSignal.downsample(downsampleFactor);
-
+            writeDataToFile(inputSignal);
             cout << "Downsampling completed successfully." << endl;
             break;
 
@@ -581,7 +619,7 @@ int main()
 
             // Thực hiện upsample và cập nhật tín hiệu đầu vào
             inputSignal = inputSignal.upsample(upsampleFactor);
-
+            writeDataToFile(inputSignal);
             cout << "Upsampling completed successfully." << endl;
             break;
 
@@ -596,7 +634,7 @@ int main()
 
             // Áp dụng bộ lọc thông thấp và cập nhật tín hiệu đầu vào
             inputSignal = inputSignal.lowPassFilter(filterLengthLP, cutoffFreqLP);
-
+            writeDataToFile(inputSignal);
             cout << "Low pass filtering completed successfully." << endl;
             break;
 
@@ -613,7 +651,7 @@ int main()
 
             // Áp dụng bộ lọc thông dải và cập nhật tín hiệu đầu vào
             inputSignal = inputSignal.bandPassFilter(filterLengthBP, lowCutoffFreqBP, highCutoffFreqBP);
-
+            writeDataToFile(inputSignal);
             cout << "Band pass filtering completed successfully." << endl;
             break;
         }
@@ -628,6 +666,8 @@ int main()
             cin >> highCutoffFreqHP;
             // Áp dụng High Pass Filter vào inputSignal
             inputSignal = inputSignal.highPassFilter(filterLengthHP, highCutoffFreqHP);
+            writeDataToFile(inputSignal);
+            cout << "High pass filtering completed successfully." << endl;
             break;
         }
 
@@ -643,6 +683,8 @@ int main()
             cin >> highCutoffFreqBS;
             // Áp dụng Band Stop Filter vào inputSignal
             inputSignal = inputSignal.bandStopFilter(filterLengthBS, lowCutoffFreqBS, highCutoffFreqBS);
+            writeDataToFile(inputSignal);
+            cout << "High stop filtering completed successfully." << endl;
             break;
         }
 
@@ -658,7 +700,7 @@ int main()
     Signal outputSignal = inputSignal;
 
     //  Lưu dữ liệu vào file data.txt
-    vector<int> outputIndexList = outputSignal.indexList;
+    vector<float> outputIndexList = outputSignal.indexList;
     vector<float> outputValueList = outputSignal.valueList;
     float outputSampleRate = outputSignal.sampleRate;
 
